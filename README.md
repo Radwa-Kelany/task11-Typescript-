@@ -198,3 +198,71 @@ export class CachePromise<T = any> {
 let cache = new CachePromise<any>(5 * 60 * 1000);
 let user = cache.getOrCreateCache(2, () => fetchUserData(2, cache.defaultTTL));
 ```
+## Implementing a Rate-Limited API With Typescript
+### General concept
+This Mechanism aims throttling excess requests to API endpoints to prevent server fall down or protect it from DoS attacks.
+For example: we can only allow 1000 requests /minute. If the number of requests exceed Max-limit, we throttling them and send waiting response.
+### Flowchart
+<img width="350" height="510" alt="rate limit flowchart" src="https://github.com/user-attachments/assets/df919b2d-2bca-4d8e-943f-bc78ba29bf90" />
+
+
+### Code 
+```ts
+// requestRate.ts
+export class RequestRate {
+  max_requests_count: number;
+  allowedTime: number;
+  startTime: number;
+  current_request_count: number = 10;
+
+  constructor(count: number, time: number) {
+    this.max_requests_count = count;
+    this.allowedTime = time;
+    this.startTime = Date.now() + this.allowedTime;
+  }
+
+  checkStartTime() {
+    let now = Date.now();
+    if (now - this.startTime! > this.allowedTime!) {
+      this.current_request_count = 0;
+      this.startTime = now + this.allowedTime!;
+    }
+  }
+  allowRequest(): boolean {
+    this.checkStartTime();
+    if (this.current_request_count > this.max_requests_count!) {
+      return false;
+    } else {
+      this.current_request_count++;
+      return true;
+    }
+  }
+  middleWare() {
+    return this.allowRequest();
+  }
+}
+```
+```ts
+// middleWare.ts
+// import RequestRate from requestRate.ts
+let orderRateLimit = new RequestRate(9, 1000);
+export const requestRateMiddleWare = function (
+  req: Request,
+  res: Response,
+  next: Function,
+): void {
+  if (orderRateLimit.middleWare()) {
+    console.log('yes allowed');
+    next();
+  } else throw new Error('Exceed Rate limit');
+};
+```
+```ts
+// app.ts
+// import requestRateMiddleWare
+
+app.post('/api/v1/order/add', requestRateMiddleWare(), (req, res) => {
+  res.json({ msg: 'successful order submitting' });
+});
+
+```
