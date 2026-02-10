@@ -7,7 +7,7 @@ its useful in case of DB connection and HTTP requests.
 <img width="360" height="440" alt="Retry request flowchart" src="https://github.com/user-attachments/assets/28bae653-f94d-48e8-9c01-aeb4c178cf59" />
 
 ### Code 
-``ts
+```ts
 class Retry {
   attempts_count: number;
   waiting_time: number;
