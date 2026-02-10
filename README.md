@@ -268,4 +268,4 @@ app.post('/api/v1/order/add', requestRateMiddleWare(), (req, res) => {
 ```
 ## Order & Payment Estimation 
 
-[Getting Started Guide](./docs/estimation.pdf)
+[Estimation.pdf](./docs/estimation.pdf)
