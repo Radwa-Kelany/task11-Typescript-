@@ -60,7 +60,7 @@ let UsersDB: entityDB = [
   {
     data: {
       id: 1,
-      name: 'Sid',
+      name: 'Lim',
     },
   },
   {
@@ -92,7 +92,7 @@ let UsersCache: entityCache<any> = [
       id: 1,
       name: 'Lim',
     },
-    ttl: new Date('02-11-2026').getTime(),
+    ttl: new Date('02-13-2026').getTime(),
   },
   {
     data: {
@@ -106,33 +106,26 @@ let UsersCache: entityCache<any> = [
 ```
 ```ts
 // fetcher.ts
-export const fetchUserData = async <T = any>(
+export const fetchUserData = async <T>(
   userId: number,
   ttl: number,
 ): Promise<T> => {
-  let user = UsersCache.find((use) => use.data.id == userId);
-  try {
-    // Fetch user from DB
+  return new Promise((resolved, rejected) => {
     const userDB = UsersDB.find((use) => use.data.id == userId);
+    let now = Date.now();
     if (userDB) {
-      let now = Date.now();
-      let newUser = {
-        data: userDB.data,
-        ttl: now + ttl,
-      };
+      let newUser = { data: userDB.data, ttl: now + ttl };
       let userCache = UsersCache.find((use) => use.data.id == userDB.data.id);
       if (userCache) {
         userCache = newUser;
       } else {
         UsersCache.push(newUser);
       }
-      await new Promise((resolve) => setTimeout(resolve, 3000)); // Simulate delay
-      user = newUser;
+      resolved(newUser as T);
+    } else {
+      rejected(new Error('Failure in get data'));
     }
-    return user as T;
-  } catch (e) {
-    return e as T;
-  }
+  });
 };
 ```
 ```ts
@@ -160,7 +153,6 @@ export class CachePromise<T = any> {
     let now = Date.now();
     // get user from Cache
     this.getCache(userId);
-    console.log(this.entity);
     // Check if user is found and not expired
     if (this.entity && this.entity.ttl > now) {
       return this.entity as T;
@@ -173,7 +165,11 @@ export class CachePromise<T = any> {
     // Create promise to get user from DB and update it in cache
 
     let promise = fetcher()
-      .then((result) => console.log(result))
+      .then((result) => {
+        setTimeout(() => {
+          console.log('User', result);
+        }, 3000);
+      })
       .catch((e) => console.log(e));
 
     // return pending promise while promise is resolving
@@ -188,7 +184,8 @@ export class CachePromise<T = any> {
         promise: fetcher(),
       });
     }
-    return (await promise) as T;
+    console.log(this.entity);
+    return promise as T;
   }
 }
 ```
@@ -196,7 +193,14 @@ export class CachePromise<T = any> {
 // app.ts
 // import cachePromise from cachePromise.ts
 let cache = new CachePromise<any>(5 * 60 * 1000);
-let user = cache.getOrCreateCache(2, () => fetchUserData(2, cache.defaultTTL));
+// user Already in Cache and not expired
+let user1 = cache.getOrCreateCache(1, () => fetchUserData(1, cache.defaultTTL));
+// user Already in Cache but expired
+let user2 = cache.getOrCreateCache(2, () => fetchUserData(2, cache.defaultTTL));
+// user in Not in Cache but in DB
+let user3 = cache.getOrCreateCache(3, () => fetchUserData(3, cache.defaultTTL));
+// user Not in DB
+let user4 = cache.getOrCreateCache(4, () => fetchUserData(4, cache.defaultTTL));
 ```
 ## Implementing a Rate-Limited API With Typescript
 ### General concept
