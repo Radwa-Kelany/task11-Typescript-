@@ -198,7 +198,7 @@ let user1 = cache.getOrCreateCache(1, () => fetchUserData(1, cache.defaultTTL));
 console.log(user1);
 // user Already in Cache but expired
 let user2 = cache.getOrCreateCache(2, () => fetchUserData(2, cache.defaultTTL));
-// user in Not in Cache but in DB
+// user Not in Cache but in DB
 let user3 = cache.getOrCreateCache(3, () => fetchUserData(3, cache.defaultTTL));
 // user Not in DB
 let user4 = cache.getOrCreateCache(4, () => fetchUserData(4, cache.defaultTTL));
