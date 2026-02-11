@@ -146,10 +146,10 @@ export class CachePromise<T = any> {
       this.entity = {} as entityCache<T>[0];
     }
   }
-  async getOrCreateCache(
+  getOrCreateCache(
     userId: number,
     fetcher: () => Promise<T>,
-  ): Promise<T> {
+  ):T| Promise<T> {
     let now = Date.now();
     // get user from Cache
     this.getCache(userId);
@@ -159,7 +159,7 @@ export class CachePromise<T = any> {
     }
     //  Check if user is in promise = running call request
     if (this.entity?.promise) {
-      return this.entity.promise as T;
+      return this.entity.promise as Promise<T>;
     }
 
     // Create promise to get user from DB and update it in cache
@@ -185,7 +185,7 @@ export class CachePromise<T = any> {
       });
     }
     console.log(this.entity);
-    return promise as T;
+    return promise as Promise<T>;
   }
 }
 ```
@@ -195,6 +195,7 @@ export class CachePromise<T = any> {
 let cache = new CachePromise<any>(5 * 60 * 1000);
 // user Already in Cache and not expired
 let user1 = cache.getOrCreateCache(1, () => fetchUserData(1, cache.defaultTTL));
+console.log(user1);
 // user Already in Cache but expired
 let user2 = cache.getOrCreateCache(2, () => fetchUserData(2, cache.defaultTTL));
 // user in Not in Cache but in DB
